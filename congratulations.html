@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Congratulations!</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      height: 100vh;
+      overflow: hidden;
+      background: radial-gradient(circle at center, #2b1055 0%, #0b0b1f 100%);
+      font-family: "Segoe UI", Arial, sans-serif;
+      color: #fff;
+    }
+
+    canvas {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+    }
+
+    .content {
+      position: relative;
+      z-index: 1;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 16px;
+    }
+
+    h1 {
+      font-size: clamp(2.5rem, 8vw, 5.5rem);
+      background: linear-gradient(90deg, #ffd700, #ff6ec7, #7df9ff, #ffd700);
+      background-size: 300% 100%;
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+      animation: shine 4s linear infinite, pop 0.8s ease-out;
+    }
+
+    p {
+      margin-top: 16px;
+      font-size: clamp(1.1rem, 3vw, 1.6rem);
+      opacity: 0.9;
+      animation: pop 1s ease-out;
+    }
+
+    button {
+      margin-top: 40px;
+      padding: 14px 40px;
+      font-size: 1.2rem;
+      font-weight: bold;
+      color: #fff;
+      background: linear-gradient(135deg, #ff6ec7, #ff9a3c);
+      border: none;
+      border-radius: 50px;
+      cursor: pointer;
+      box-shadow: 0 6px 20px rgba(255, 110, 199, 0.5);
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+    button:hover {
+      transform: scale(1.08);
+      box-shadow: 0 8px 28px rgba(255, 110, 199, 0.8);
+    }
+
+    button:active { transform: scale(0.95); }
+
+    @keyframes shine {
+      to { background-position: 300% 0; }
+    }
+
+    @keyframes pop {
+      0%   { transform: scale(0.3); opacity: 0; }
+      70%  { transform: scale(1.1); opacity: 1; }
+      100% { transform: scale(1); }
+    }
+  </style>
+</head>
+<body>
+  <canvas id="confetti"></canvas>
+
+  <div class="content">
+    <h1>🎉 Congratulations! 🎉</h1>
+    <p>We created and deployed the site successfully! 🚀</p>
+    <button id="boomBtn">💥 Boom Again</button>
+  </div>
+
+  <script>
+    const canvas = document.getElementById("confetti");
+    const ctx = canvas.getContext("2d");
+    let particles = [];
+
+    const colors = ["#ffd700", "#ff6ec7", "#7df9ff", "#7CFC00", "#ff4500", "#ffffff", "#a66cff"];
+
+    function resize() {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    }
+    window.addEventListener("resize", resize);
+    resize();
+
+    // Shoot a burst of confetti from a point toward a direction (angle in radians)
+    function burst(x, y, angle, count) {
+      for (let i = 0; i < count; i++) {
+        const spread = angle + (Math.random() - 0.5) * 1.2;
+        const speed = 8 + Math.random() * 12;
+        particles.push({
+          x, y,
+          vx: Math.cos(spread) * speed,
+          vy: Math.sin(spread) * speed,
+          size: 6 + Math.random() * 8,
+          color: colors[Math.floor(Math.random() * colors.length)],
+          rotation: Math.random() * 360,
+          spin: (Math.random() - 0.5) * 15,
+          life: 160 + Math.random() * 60,
+          shape: Math.random() > 0.5 ? "rect" : "circle"
+        });
+      }
+    }
+
+    // Boom from all four sides (corners), aimed toward the center
+    function boom() {
+      const w = canvas.width, h = canvas.height;
+      burst(0, h, -Math.PI / 4, 120);           // bottom-left  -> up-right
+      burst(w, h, -3 * Math.PI / 4, 120);       // bottom-right -> up-left
+      burst(0, 0, Math.PI / 4, 80);             // top-left     -> down-right
+      burst(w, 0, 3 * Math.PI / 4, 80);         // top-right    -> down-left
+    }
+
+    function animate() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      particles.forEach(p => {
+        p.vy += 0.25;          // gravity
+        p.vx *= 0.98;          // air resistance
+        p.vy *= 0.98;
+        p.x += p.vx;
+        p.y += p.vy;
+        p.rotation += p.spin;
+        p.life--;
+
+        ctx.save();
+        ctx.globalAlpha = Math.max(p.life / 100, 0);
+        ctx.translate(p.x, p.y);
+        ctx.rotate(p.rotation * Math.PI / 180);
+        ctx.fillStyle = p.color;
+        if (p.shape === "rect") {
+          ctx.fillRect(-p.size / 2, -p.size / 4, p.size, p.size / 2);
+        } else {
+          ctx.beginPath();
+          ctx.arc(0, 0, p.size / 3, 0, Math.PI * 2);
+          ctx.fill();
+        }
+        ctx.restore();
+      });
+
+      particles = particles.filter(p => p.life > 0 && p.y < canvas.height + 50);
+      requestAnimationFrame(animate);
+    }
+
+    document.getElementById("boomBtn").addEventListener("click", boom);
+
+    animate();
+    boom(); // boom on page load
+  </script>
+</body>
+</html>
